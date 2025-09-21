@@ -30,7 +30,7 @@ import 'screens/donations_screen.dart';
 import 'services/hive_service.dart';
 import 'services/notification_service.dart';
 import 'services/food_ai_service.dart';
-import 'services/backend_service.dart';
+
 
 // CONSTANTES DE COLOR
 const Color betterMePrimaryColor = Color(0xFF7B1FA2);
