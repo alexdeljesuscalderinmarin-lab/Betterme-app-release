@@ -45,30 +45,18 @@ jobs:
       - name: Build APK
         run: flutter build apk --release --no-tree-shake-icons
 
-      # ✅ SOLUCIÓN GARANTIZADA: Descarga manual
-      - name: Show Download Instructions
-        run: |
-          echo "🎉 ¡BUILD COMPLETADO CON ÉXITO!"
-          echo "📦 APK: build/app/outputs/flutter-apk/app-release.apk"
-          echo "💾 Tamaño: $(ls -lh build/app/outputs/flutter-apk/app-release.apk | awk '{print $5}')"
-          echo ""
-          echo "👇 PARA DESCARGAR:"
-          echo "1. Click en 'Summary' de este workflow"
-          echo "2. Click en el icono de carpeta 📁"
-          echo "3. Navega a: build/app/outputs/flutter-apk/"
-          echo "4. Click derecho → Download en 'app-release.apk'"
-          echo ""
-          echo "⏰ Disponible por 24 horas"
+      # ✅ PASO CRUCIAL QUE TE FALTABA: Subir el APK
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: betterme-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 7
 
-      # Opcional: Intenta subir a transfer.sh europe
-      - name: Try European Transfer
-        run: |
-          curl --upload-file build/app/outputs/flutter-apk/app-release.apk \
-            https://transfer.sh/europe/betterme-release.apk > transfer_url.txt 2>/dev/null || true
-          
-          if [ -s transfer_url.txt ]; then
-            DOWNLOAD_URL=$(cat transfer_url.txt)
-            echo "🎉 LINK ALTERNATIVO: $DOWNLOAD_URL"
-          else
-            echo "⚠️  Transfer.sh no disponible, usa descarga manual"
-          fi
+      # ✅ OPCIONAL: Subir APK split para reducir tamaño
+      - name: Upload Split APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: betterme-split-apks
+          path: build/app/outputs/flutter-apk/
+          retention-days: 7
