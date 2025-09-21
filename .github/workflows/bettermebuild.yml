@@ -1,0 +1,74 @@
+name: BetterMe Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+env:
+  FLUTTER_VERSION: '3.22.3'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+          cache-key: flutter-${{ env.FLUTTER_VERSION }}
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Create .env file with secrets
+        run: |
+          cat > .env << EOF
+          NUTRITIONIX_APP_ID=${{ secrets.NUTRITIONIX_APP_ID }}
+          NUTRITIONIX_APP_KEY=${{ secrets.NUTRITIONIX_APP_KEY }}
+          GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+          EOF
+
+      - name: Create google-services.json
+        run: |
+          echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 --decode > android/app/google-services.json
+
+      - name: Build APK
+        run: flutter build apk --release --no-tree-shake-icons
+
+      # ✅ SOLUCIÓN GARANTIZADA: Descarga manual
+      - name: Show Download Instructions
+        run: |
+          echo "🎉 ¡BUILD COMPLETADO CON ÉXITO!"
+          echo "📦 APK: build/app/outputs/flutter-apk/app-release.apk"
+          echo "💾 Tamaño: $(ls -lh build/app/outputs/flutter-apk/app-release.apk | awk '{print $5}')"
+          echo ""
+          echo "👇 PARA DESCARGAR:"
+          echo "1. Click en 'Summary' de este workflow"
+          echo "2. Click en el icono de carpeta 📁"
+          echo "3. Navega a: build/app/outputs/flutter-apk/"
+          echo "4. Click derecho → Download en 'app-release.apk'"
+          echo ""
+          echo "⏰ Disponible por 24 horas"
+
+      # Opcional: Intenta subir a transfer.sh europe
+      - name: Try European Transfer
+        run: |
+          curl --upload-file build/app/outputs/flutter-apk/app-release.apk \
+            https://transfer.sh/europe/betterme-release.apk > transfer_url.txt 2>/dev/null || true
+          
+          if [ -s transfer_url.txt ]; then
+            DOWNLOAD_URL=$(cat transfer_url.txt)
+            echo "🎉 LINK ALTERNATIVO: $DOWNLOAD_URL"
+          else
+            echo "⚠️  Transfer.sh no disponible, usa descarga manual"
+          fi

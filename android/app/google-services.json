@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "713175508078",
+    "project_id": "better-me-app-164d5",
+    "storage_bucket": "better-me-app-164d5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:713175508078:android:667c5dc51326270d66727f",
+        "android_client_info": {
+          "package_name": "com.betterme.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCM79sMDjD5gb2tKYcm2EsXmFtGnTBGsXA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:713175508078:android:e55f4f5ed968209a66727f",
+        "android_client_info": {
+          "package_name": "com.example.calories_app_new"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCM79sMDjD5gb2tKYcm2EsXmFtGnTBGsXA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
