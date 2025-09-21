@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:firebase_core/firebase_core.dart';
 
 // Importaciones de adapters
 import 'adapters/food_entry_adapter.dart';
+import 'adapters/time_of_day_adapter.dart';
 import 'adapters/user_model_adapter.dart';
 import 'adapters/workout_session_adapter.dart';
 
@@ -32,7 +32,6 @@ import 'services/notification_service.dart';
 import 'services/food_ai_service.dart';
 import 'services/backend_service.dart';
 
-
 // CONSTANTES DE COLOR
 const Color betterMePrimaryColor = Color(0xFF7B1FA2);
 const Color betterMeSecondaryColor = Color(0xFFE91E63);
@@ -43,9 +42,6 @@ const Color betterMeBackgroundColor = Colors.white;
 const Color betterMeTextColor = Colors.black87;
 const Color betterMeCardColor = Color(0xFFF5F5F5);
 
-// ✅ DECLARACIÓN GLOBAL DEL SERVICIO DE NOTIFICACIONES
-final NotificationService notificationService = NotificationService();
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
@@ -53,63 +49,31 @@ Future<void> main() async {
     // ✅ CARGAR VARIABLES DE ENTORNO PRIMERO
     await dotenv.load(fileName: '.env');
     
-    // ✅ INICIALIZAR FIREBASE PRIMERO
-    await Firebase.initializeApp();
-    print('✅ Firebase inicializado correctamente');
-    
-    // ✅ INICIALIZAR HIVE
+    // ✅ INICIALIZAR HIVE PRIMERO (SIN FIREBASE POR AHORA)
     await Hive.initFlutter();
     
     // ✅ REGISTRAR ADAPTERS
+    Hive.registerAdapter(TimeOfDayAdapter());
     Hive.registerAdapter(UserModelAdapter());
     Hive.registerAdapter(FoodEntryAdapter());  
     Hive.registerAdapter(WorkoutSessionAdapter());
     
-    // ✅ INICIALIZAR SERVICIOS
+    // ✅ INICIALIZAR SERVICIOS BÁSICOS
     await HiveService.initialize();
-    await notificationService.initialize();
+    
+    // ✅ INICIALIZAR NOTIFICACIONES (OPCIONAL, PUEDE FALLAR)
+    try {
+      await NotificationService().initialize();
+    } catch (e) {
+      print('⚠️ Notificaciones no inicializadas: $e');
+    }
     
     FoodAIService.initializeCache();
-    
-    // 🆕 SINCRONIZACIÓN EN SEGUNDO PLANO (NO BLOQUEANTE)
-    _startBackgroundSync();
     
     runApp(const BetterMeApp());
   } catch (e) {
     print('Error crítico en inicialización: $e');
-    runApp(ErrorApp(error: 'Error inicializando la aplicación: $e'));
-  }
-}
-
-// 🆕 FUNCIÓN DE SINCRONIZACIÓN EN SEGUNDO PLANO
-void _startBackgroundSync() async {
-  try {
-    // Esperar a que la app esté completamente inicializada
-    await Future.delayed(const Duration(seconds: 5));
-    
-    print('🔄 Intentando sincronización automática...');
-    
-    // Verificar si hay usuario logueado
-    final currentUser = HiveService.getCurrentUser();
-    if (currentUser == null) {
-      print('⚠️ No hay usuario - Sincronización cancelada');
-      return;
-    }
-    
-    // Verificar conexión
-    final hasConnection = await BackendService.hasConnection();
-    if (!hasConnection) {
-      print('⚠️ Sin conexión - Sincronización cancelada');
-      return;
-    }
-    
-    // Realizar sincronización completa
-    await BackendService.fullSync();
-    print('✅ Sincronización background completada exitosamente');
-    
-  } catch (e) {
-    print('⚠️ Error en sincronización background: $e');
-    // No bloquear la app por errores de sincronización
+    runApp(ErrorApp(error: e.toString()));
   }
 }
 
@@ -178,7 +142,6 @@ class BetterMeApp extends StatelessWidget {
   }
 }
 
-// ✅ APP DE ERROR MEJORADA
 class ErrorApp extends StatelessWidget {
   final String error;
   
@@ -223,18 +186,16 @@ class ErrorApp extends StatelessWidget {
                 ElevatedButton(
                   onPressed: () async {
                     // Limpiar todo y reiniciar
-                    await Hive.close();
-                    await Hive.deleteBoxFromDisk('userBox');
-                    await Hive.deleteBoxFromDisk('settingsBox');
-                    await Hive.deleteBoxFromDisk('appDataBox');
-                    FoodAIService.clearCache();
+                    try {
+                      await Hive.close();
+                      await Hive.deleteBoxFromDisk('userBox');
+                      await Hive.deleteBoxFromDisk('settingsBox');
+                      await Hive.deleteBoxFromDisk('appDataBox');
+                    } catch (e) {
+                      print('Error limpiando: $e');
+                    }
                     main();
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: betterMePrimaryColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                  ),
                   child: const Text('Reiniciar desde Cero'),
                 ),
               ],
