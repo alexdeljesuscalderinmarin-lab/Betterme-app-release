@@ -1,0 +1,44 @@
+name: BUILD Sin Firebase
+
+on: workflow_dispatch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.5'
+
+      - name: Remover imports de Firebase del código
+        run: |
+          # Crear backup
+          cp lib/services/auth_service.dart lib/services/auth_service.dart.backup
+          cp lib/services/backend_service.dart lib/services/backend_service.dart.backup
+          
+          # Remover imports de Firebase
+          sed -i '/import.*firebase/d' lib/services/auth_service.dart
+          sed -i '/import.*firebase/d' lib/services/backend_service.dart
+          sed -i '/import.*google_sign_in/d' lib/services/auth_service.dart
+          sed -i '/import.*cloud_firestore/d' lib/services/backend_service.dart
+          
+          # Comentar código que usa Firebase
+          sed -i 's/static final FirebaseAuth/_\/\/ static final FirebaseAuth/g' lib/services/auth_service.dart
+          sed -i 's/static final FirebaseFirestore/_\/\/ static final FirebaseFirestore/g' lib/services/backend_service.dart
+          
+          echo "✅ Firebase removido del código"
+
+      - name: Instalar dependencias
+        run: flutter pub get
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: betterme-sin-firebase
+          path: build/app/outputs/flutter-apk/app-release.apk
